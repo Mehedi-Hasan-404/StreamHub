@@ -89,7 +89,7 @@ const CategoryChannels = () => {
       return parseM3U(m3uContent, categoryId, categoryName);
     } catch (error) {
       console.error('Error fetching M3U playlist:', error);
-      throw error;
+      return [];
     }
   };
 
@@ -117,17 +117,16 @@ const CategoryChannels = () => {
 
       // If category has M3U URL, fetch and parse it to get channels
       if (categoryData.m3uUrl) {
-        try {
-          const m3uChannels = await fetchM3UPlaylist(
-            categoryData.m3uUrl, 
-            categoryData.id, 
-            categoryData.name
-          );
+        const m3uChannels = await fetchM3UPlaylist(
+          categoryData.m3uUrl, 
+          categoryData.id, 
+          categoryData.name
+        );
+        if (m3uChannels.length > 0) {
           allChannels = [...allChannels, ...m3uChannels];
           console.log(`Loaded ${m3uChannels.length} channels from M3U playlist`);
-        } catch (m3uError) {
-          console.error('Error loading M3U playlist:', m3uError);
-          setError('Failed to load M3U playlist channels. Please try again.');
+        } else {
+          console.log('No channels loaded from M3U playlist or fetch failed');
         }
       }
 
