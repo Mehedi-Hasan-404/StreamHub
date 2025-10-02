@@ -4,22 +4,28 @@ import { getAuth } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
 import { getAnalytics, isSupported } from "firebase/analytics";
 
+// Firebase config from environment variables
 const firebaseConfig = {
-  apiKey: "AIzaSyCKz_hVm9a34Us36M4Uu7MlIEE47wH-5Ds",
-  authDomain: "live-tv-pro-302b8.firebaseapp.com",
-  projectId: "live-tv-pro-302b8",
-  storageBucket: "live-tv-pro-302b8.appspot.com",
-  messagingSenderId: "536478798061",
-  appId: "1:536478798061:web:eadca349b64e14c48ffce4",
-  measurementId: "G-LW16BGCNZQ",
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+  appId: import.meta.env.VITE_FIREBASE_APP_ID,
+  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID,
 };
 
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
 
-// Exports
+// Auth & Firestore
 export const auth = getAuth(app);
 export const db = getFirestore(app);
 
-// Optional: Initialize Analytics if supported
-export const analytics = (async () => (await isSupported()) ? getAnalytics(app) : null)();
+// Analytics (only in browser + if supported)
+export const analytics = (async () =>
+  typeof window !== "undefined" && (await isSupported())
+    ? getAnalytics(app)
+    : null)();
+
+export { app };
