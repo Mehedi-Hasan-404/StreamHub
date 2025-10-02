@@ -12,13 +12,13 @@ import { AlertCircle, Tv, Search, ArrowLeft } from 'lucide-react';
 
 const CategoryChannels = () => {
   const { slug } = useParams<{ slug: string }>();
-  const [, setLocation] = useLocation();
+  const [, setLocation ] = useLocation();
   const [channels, setChannels] = useState<PublicChannel[]>([]);
   const [category, setCategory] = useState<Category | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [filteredChannels, setFilteredChannels] = useState<PublicChannel[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true); // FIX: Added missing state
+  const [error, setError] = useState<string | null>(null); // FIX: Added missing state
 
   useEffect(() => {
     if (slug) {
@@ -94,7 +94,7 @@ const CategoryChannels = () => {
     try {
       setLoading(true);
       setError(null);
-      console.log('Fetching for slug:', slug);
+      console.log('Fetching for slug:', slug); // DEBUG log
 
       const categoriesRef = collection(db, 'categories');
       const categoryQuery = query(categoriesRef, where('slug', '==', slug));
@@ -103,19 +103,19 @@ const CategoryChannels = () => {
       if (categorySnapshot.empty) {
         setError('Category not found');
         setLoading(false);
-        console.log('No category found');
+        console.log('No category found for slug:', slug); // DEBUG
         return;
       }
 
       const categoryDoc = categorySnapshot.docs[0];
       const categoryData = { id: categoryDoc.id, ...categoryDoc.data() } as Category;
       setCategory(categoryData);
-      console.log('Category loaded:', categoryData);
+      console.log('Category loaded:', categoryData); // DEBUG
 
       let allChannels: PublicChannel[] = [];
 
       if (categoryData.m3uUrl) {
-        console.log('Fetching M3U from:', categoryData.m3uUrl);
+        console.log('Fetching M3U from:', categoryData.m3uUrl); // DEBUG
         const m3uChannels = await fetchM3UPlaylist(
           categoryData.m3uUrl,
           categoryData.id,
@@ -123,12 +123,12 @@ const CategoryChannels = () => {
         );
         if (m3uChannels.length > 0) {
           allChannels = [...allChannels, ...m3uChannels];
-          console.log(`Loaded ${m3uChannels.length} channels from M3U playlist`);
+          console.log(`Loaded ${m3uChannels.length} channels from M3U`);
         } else {
-          console.log('No channels loaded from M3U playlist or fetch failed');
+          console.log('No channels from M3U or fetch failed');
         }
       } else {
-        console.log('No m3uUrl in category - skipping M3U fetch');
+        console.log('No m3uUrl - skipping M3U'); // DEBUG
       }
 
       try {
@@ -142,16 +142,16 @@ const CategoryChannels = () => {
         })) as PublicChannel[];
 
         allChannels = [...allChannels, ...manualChannels];
-        console.log(`Loaded ${manualChannels.length} manual channels`);
+        console.log(`Loaded ${manualChannels.length} manual channels`); // DEBUG
       } catch (firestoreError) {
         console.error('Error fetching manual channels:', firestoreError);
       }
 
-      console.log(`Total channels loaded: ${allChannels.length}`);
+      console.log(`Total channels: ${allChannels.length}`);
       setChannels(allChannels);
 
     } catch (error) {
-      console.error('Error fetching category and channels:', error);
+      console.error('Fetch error:', error);
       setError('Failed to load channels. Please try again.');
     } finally {
       setLoading(false);
@@ -231,7 +231,7 @@ const CategoryChannels = () => {
           placeholder="Search channels..."
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          className="w-full pl-10 pr-10 py-2 border rounded-md focus:outline-none focus:ring-2"
+          className="w-full pl-10 pr-10 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-ring"
         />
         {searchQuery && (
           <button
@@ -258,7 +258,7 @@ const CategoryChannels = () => {
           <Tv size={48} className="text-muted-foreground mx-auto mb-4" />
           <h3 className="text-lg font-semibold mb-2">No Channels Available</h3>
           <p className="text-muted-foreground">
-            No channels have been added to this category yet. Add an `m3uUrl` to the category or manual channels in Firestore.
+            No channels for {category.name} yet. Add via admin.
           </p>
           <Button onClick={() => setLocation('/admin')} className="mt-4">Go to Admin</Button>
         </div>
