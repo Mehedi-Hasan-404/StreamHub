@@ -17,6 +17,7 @@ const CategoryChannels = () => {
   const [category, setCategory] = useState<Category | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [filteredChannels, setFilteredChannels] = useState<PublicChannel[]>([]);
+  // FIX: Add missing states
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -97,6 +98,7 @@ const CategoryChannels = () => {
     try {
       setLoading(true);
       setError(null);
+      console.log('Fetching for slug:', slug); // DEBUG
 
       // Find the category by slug
       const categoriesRef = collection(db, 'categories');
@@ -106,17 +108,20 @@ const CategoryChannels = () => {
       if (categorySnapshot.empty) {
         setError('Category not found');
         setLoading(false);
+        console.log('No category found'); // DEBUG
         return;
       }
 
       const categoryDoc = categorySnapshot.docs[0];
       const categoryData = { id: categoryDoc.id, ...categoryDoc.data() } as Category;
       setCategory(categoryData);
+      console.log('Category loaded:', categoryData); // DEBUG
 
       let allChannels: PublicChannel[] = [];
 
       // If category has M3U URL, fetch and parse it to get channels
       if (categoryData.m3uUrl) {
+        console.log('Fetching M3U from:', categoryData.m3uUrl); // DEBUG
         const m3uChannels = await fetchM3UPlaylist(
           categoryData.m3uUrl,
           categoryData.id,
@@ -128,6 +133,8 @@ const CategoryChannels = () => {
         } else {
           console.log('No channels loaded from M3U playlist or fetch failed');
         }
+      } else {
+        console.log('No m3uUrl in category - skipping M3U fetch'); // DEBUG
       }
 
       // Also fetch manually added channels from Firestore
@@ -142,6 +149,7 @@ const CategoryChannels = () => {
         })) as PublicChannel[];
 
         allChannels = [...allChannels, ...manualChannels];
+        console.log(`Loaded ${manualChannels.length} manual channels`); // DEBUG
       } catch (firestoreError) {
         console.error('Error fetching manual channels:', firestoreError);
       }
@@ -159,16 +167,17 @@ const CategoryChannels = () => {
 
   if (loading) {
     return (
-      <div className="space-y-6">
+      <div className="space-y-6 p-4">
         <div className="space-y-2">
           <Skeleton className="h-8 w-48" />
           <Skeleton className="h-4 w-96" />
         </div>
         <Skeleton className="h-10 w-full" />
+        {/* FIX: Use standard Tailwind grid */}
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
           {Array.from({ length: 12 }).map((_, i) => (
             <div key={i} className="space-y-2">
-              <Skeleton className="aspect-video w-full" />
+              <Skeleton className="aspect-video w-full rounded" />
               <Skeleton className="h-4 w-3/4" />
               <Skeleton className="h-3 w-1/2" />
             </div>
@@ -180,24 +189,28 @@ const CategoryChannels = () => {
 
   if (error) {
     return (
-      <Alert variant="destructive">
-        <AlertCircle className="h-4 w-4" />
-        <AlertDescription>{error}</AlertDescription>
-      </Alert>
+      <div className="p-4">
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
+      </div>
     );
   }
 
   if (!category) {
     return (
-      <Alert>
-        <AlertCircle className="h-4 w-4" />
-        <AlertDescription>Category not found.</AlertDescription>
-      </Alert>
+      <div className="p-4">
+        <Alert>
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>Category not found.</AlertDescription>
+        </Alert>
+      </div>
     );
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 p-4">
       {/* Back Button at top left */}
       <div className="-mt-2">
         <Button
@@ -215,25 +228,25 @@ const CategoryChannels = () => {
           <Tv size={24} />
           {category.name}
         </h1>
-        <p className="text-text-secondary">
+        <p className="text-muted-foreground"> {/* FIX: Standard shadcn class */}
           {channels.length} channel{channels.length !== 1 ? 's' : ''} available
         </p>
       </div>
 
       {/* Search Bar */}
       <div className="relative">
-        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-text-secondary w-5 h-5" />
+        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-5 h-5" />
         <input
           type="text"
           placeholder="Search channels..."
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          className="form-input pl-10"
+          className="w-full pl-10 pr-10 py-2 border rounded-md focus:outline-none focus:ring-2" {/* FIX: Standard input styles */}
         />
         {searchQuery && (
           <button
             onClick={() => setSearchQuery('')}
-            className="absolute right-3 top-1/2 transform -translate-y-1/2 text-text-secondary hover:text-text-primary transition-colors"
+            className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
           >
             <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
               <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
@@ -244,22 +257,23 @@ const CategoryChannels = () => {
 
       {filteredChannels.length === 0 && searchQuery ? (
         <div className="text-center py-12">
-          <Search size={48} className="text-text-secondary mx-auto mb-4" />
+          <Search size={48} className="text-muted-foreground mx-auto mb-4" />
           <h3 className="text-lg font-semibold mb-2">No channels found</h3>
-          <p className="text-text-secondary">
+          <p className="text-muted-foreground">
             No channels match "{searchQuery}". Try a different search term.
           </p>
         </div>
       ) : channels.length === 0 ? (
         <div className="text-center py-12">
-          <Tv size={48} className="text-text-secondary mx-auto mb-4" />
+          <Tv size={48} className="text-muted-foreground mx-auto mb-4" />
           <h3 className="text-lg font-semibold mb-2">No Channels Available</h3>
-          <p className="text-text-secondary">
-            No channels have been added to this category yet.
+          <p className="text-muted-foreground">
+            No channels have been added to this category yet. Add an `m3uUrl` to the category or manual channels in Firestore.
           </p>
+          <Button onClick={() => setLocation('/admin')} className="mt-4">Go to Admin</Button>
         </div>
       ) : (
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4"> {/* FIX: Standard Tailwind */}
           {filteredChannels.map(channel => (
             <ChannelCard key={channel.id} channel={channel} />
           ))}
