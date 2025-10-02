@@ -12,7 +12,7 @@ import { AlertCircle, Tv, Search, ArrowLeft } from 'lucide-react';
 
 const CategoryChannels = () => {
   const { slug } = useParams<{ slug: string }>();
-  const [, setLocation ] = useLocation();
+  const [, setLocation] = useLocation();
   const [channels, setChannels] = useState<PublicChannel[]>([]);
   const [category, setCategory] = useState<Category | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
@@ -46,9 +46,11 @@ const CategoryChannels = () => {
       const line = lines[i];
 
       if (line.startsWith('#EXTINF:')) {
+        // Extract channel name (after the comma)
         const nameMatch = line.match(/,(.+)$/);
         const channelName = nameMatch ? nameMatch[1].trim() : 'Unknown Channel';
 
+        // Extract logo URL from tvg-logo attribute
         const logoMatch = line.match(/tvg-logo="([^"]+)"/);
         const logoUrl = logoMatch ? logoMatch[1] : '/placeholder.svg';
 
@@ -59,6 +61,7 @@ const CategoryChannels = () => {
           categoryName,
         };
       } else if (line && !line.startsWith('#') && currentChannel.name) {
+        // Create consistent ID format for M3U channels
         const cleanChannelName = currentChannel.name.replace(/[^a-zA-Z0-9]/g, '_').toLowerCase();
         const channel: PublicChannel = {
           id: `${categoryId}_${cleanChannelName}_${channels.length}`,
@@ -69,7 +72,7 @@ const CategoryChannels = () => {
           categoryName,
         };
         channels.push(channel);
-        currentChannel = {};
+        currentChannel = {}; // Reset for next channel
       }
     }
 
@@ -94,8 +97,9 @@ const CategoryChannels = () => {
     try {
       setLoading(true);
       setError(null);
-      console.log('Fetching for slug:', slug); // DEBUG log
+      console.log('Fetching for slug:', slug); // DEBUG
 
+      // Find the category by slug
       const categoriesRef = collection(db, 'categories');
       const categoryQuery = query(categoriesRef, where('slug', '==', slug));
       const categorySnapshot = await getDocs(categoryQuery);
@@ -103,7 +107,7 @@ const CategoryChannels = () => {
       if (categorySnapshot.empty) {
         setError('Category not found');
         setLoading(false);
-        console.log('No category found for slug:', slug); // DEBUG
+        console.log('No category found'); // DEBUG
         return;
       }
 
@@ -114,6 +118,7 @@ const CategoryChannels = () => {
 
       let allChannels: PublicChannel[] = [];
 
+      // If category has M3U URL, fetch and parse it to get channels
       if (categoryData.m3uUrl) {
         console.log('Fetching M3U from:', categoryData.m3uUrl); // DEBUG
         const m3uChannels = await fetchM3UPlaylist(
@@ -123,14 +128,15 @@ const CategoryChannels = () => {
         );
         if (m3uChannels.length > 0) {
           allChannels = [...allChannels, ...m3uChannels];
-          console.log(`Loaded ${m3uChannels.length} channels from M3U`);
+          console.log(`Loaded ${m3uChannels.length} channels from M3U playlist`);
         } else {
-          console.log('No channels from M3U or fetch failed');
+          console.log('No channels loaded from M3U playlist or fetch failed');
         }
       } else {
-        console.log('No m3uUrl - skipping M3U'); // DEBUG
+        console.log('No m3uUrl in category - skipping M3U fetch'); // DEBUG
       }
 
+      // Also fetch manually added channels from Firestore
       try {
         const channelsRef = collection(db, 'channels');
         const channelsQuery = query(channelsRef, where('categoryId', '==', categoryData.id));
@@ -147,11 +153,11 @@ const CategoryChannels = () => {
         console.error('Error fetching manual channels:', firestoreError);
       }
 
-      console.log(`Total channels: ${allChannels.length}`);
+      console.log(`Total channels loaded: ${allChannels.length}`);
       setChannels(allChannels);
 
     } catch (error) {
-      console.error('Fetch error:', error);
+      console.error('Error fetching category and channels:', error);
       setError('Failed to load channels. Please try again.');
     } finally {
       setLoading(false);
@@ -166,6 +172,7 @@ const CategoryChannels = () => {
           <Skeleton className="h-4 w-96" />
         </div>
         <Skeleton className="h-10 w-full" />
+        {/* FIX: Standard Tailwind grid */}
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
           {Array.from({ length: 12 }).map((_, i) => (
             <div key={i} className="space-y-2">
@@ -203,6 +210,7 @@ const CategoryChannels = () => {
 
   return (
     <div className="space-y-6 p-4">
+      {/* Back Button at top left */}
       <div className="-mt-2">
         <Button
           variant="ghost"
@@ -219,11 +227,12 @@ const CategoryChannels = () => {
           <Tv size={24} />
           {category.name}
         </h1>
-        <p className="text-muted-foreground">
+        <p className="text-muted-foreground"> {/* FIX: Standard shadcn class */}
           {channels.length} channel{channels.length !== 1 ? 's' : ''} available
         </p>
       </div>
 
+      {/* Search Bar */}
       <div className="relative">
         <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-5 h-5" />
         <input
@@ -231,7 +240,7 @@ const CategoryChannels = () => {
           placeholder="Search channels..."
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          className="w-full pl-10 pr-10 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-ring"
+          className="w-full pl-10 pr-10 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-ring" {/* FIX: Standard input styles */}
         />
         {searchQuery && (
           <button
@@ -258,11 +267,12 @@ const CategoryChannels = () => {
           <Tv size={48} className="text-muted-foreground mx-auto mb-4" />
           <h3 className="text-lg font-semibold mb-2">No Channels Available</h3>
           <p className="text-muted-foreground">
-            No channels for {category.name} yet. Add via admin.
+            No channels have been added to this category yet. Add via admin.
           </p>
           <Button onClick={() => setLocation('/admin')} className="mt-4">Go to Admin</Button>
         </div>
       ) : (
+        {/* FIX: Standard Tailwind grid */}
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
           {filteredChannels.map(channel => (
             <ChannelCard key={channel.id} channel={channel} />
