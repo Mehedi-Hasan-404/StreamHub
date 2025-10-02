@@ -1,4 +1,4 @@
-// /src/pages/CategoryChannels.tsx (Your provided full code)
+// /src/pages/CategoryChannels.tsx
 import { useState, useEffect } from 'react';
 import { useParams, useLocation } from 'wouter';
 import { collection, query, where, getDocs } from 'firebase/firestore';
@@ -15,19 +15,17 @@ const CategoryChannels = () => {
   const [, setLocation] = useLocation();
   const [channels, setChannels] = useState<PublicChannel[]>([]);
   const [category, setCategory] = useState<Category | null>(null);
-  const [loading, setLoading] = useState(true); // <-- Initial state is true
-  const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [filteredChannels, setFilteredChannels] = useState<PublicChannel[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  // Fetch data when slug changes
   useEffect(() => {
     if (slug) {
-      fetchCategoryAndChannels(); // <-- This starts the data fetching
+      fetchCategoryAndChannels();
     }
   }, [slug]);
 
-  // Filter channels based on search query
   useEffect(() => {
     if (channels.length > 0) {
       const filtered = channels.filter(channel =>
@@ -39,7 +37,6 @@ const CategoryChannels = () => {
     }
   }, [searchQuery, channels]);
 
-  // Parse M3U content to extract channel info
   const parseM3U = (m3uContent: string, categoryId: string, categoryName: string): PublicChannel[] => {
     const lines = m3uContent.split('\n').map(line => line.trim()).filter(line => line);
     const channels: PublicChannel[] = [];
@@ -47,13 +44,16 @@ const CategoryChannels = () => {
 
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i];
-      
+
       if (line.startsWith('#EXTINF:')) {
+        // Extract channel name (after the comma)
         const nameMatch = line.match(/,(.+)$/);
         const channelName = nameMatch ? nameMatch[1].trim() : 'Unknown Channel';
+
+        // Extract logo URL from tvg-logo attribute
         const logoMatch = line.match(/tvg-logo="([^"]+)"/);
         const logoUrl = logoMatch ? logoMatch[1] : '/placeholder.svg';
-        
+
         currentChannel = {
           name: channelName,
           logoUrl: logoUrl,
@@ -61,6 +61,7 @@ const CategoryChannels = () => {
           categoryName,
         };
       } else if (line && !line.startsWith('#') && currentChannel.name) {
+        // Create consistent ID format for M3U channels
         const cleanChannelName = currentChannel.name.replace(/[^a-zA-Z0-9]/g, '_').toLowerCase();
         const channel: PublicChannel = {
           id: `${categoryId}_${cleanChannelName}_${channels.length}`,
@@ -78,7 +79,6 @@ const CategoryChannels = () => {
     return channels;
   };
 
-  // Fetch and parse an M3U playlist from a URL
   const fetchM3UPlaylist = async (m3uUrl: string, categoryId: string, categoryName: string): Promise<PublicChannel[]> => {
     try {
       const response = await fetch(m3uUrl);
@@ -93,13 +93,12 @@ const CategoryChannels = () => {
     }
   };
 
-  // Main function to fetch category and its channels
   const fetchCategoryAndChannels = async () => {
     try {
-      setLoading(true); // <-- Set loading to true when fetch starts
+      setLoading(true);
       setError(null);
 
-      // Find the category by slug in Firestore
+      // Find the category by slug
       const categoriesRef = collection(db, 'categories');
       const categoryQuery = query(categoriesRef, where('slug', '==', slug));
       const categorySnapshot = await getDocs(categoryQuery);
@@ -116,11 +115,11 @@ const CategoryChannels = () => {
 
       let allChannels: PublicChannel[] = [];
 
-      // If category has an M3U URL, fetch and parse it
+      // If category has M3U URL, fetch and parse it to get channels
       if (categoryData.m3uUrl) {
         const m3uChannels = await fetchM3UPlaylist(
-          categoryData.m3uUrl, 
-          categoryData.id, 
+          categoryData.m3uUrl,
+          categoryData.id,
           categoryData.name
         );
         if (m3uChannels.length > 0) {
@@ -136,7 +135,7 @@ const CategoryChannels = () => {
         const channelsRef = collection(db, 'channels');
         const channelsQuery = query(channelsRef, where('categoryId', '==', categoryData.id));
         const channelsSnapshot = await getDocs(channelsQuery);
-        
+
         const manualChannels = channelsSnapshot.docs.map(doc => ({
           id: doc.id,
           ...doc.data()
@@ -154,12 +153,10 @@ const CategoryChannels = () => {
       console.error('Error fetching category and channels:', error);
       setError('Failed to load channels. Please try again.');
     } finally {
-      setLoading(false); // <-- Set loading to false when fetch completes (or fails)
+      setLoading(false);
     }
   };
 
-  // --- Render loading state (Skeleton UI) ---
-  // This happens *after* App.tsx Suspense resolves and CategoryChannels mounts
   if (loading) {
     return (
       <div className="space-y-6">
@@ -168,7 +165,7 @@ const CategoryChannels = () => {
           <Skeleton className="h-4 w-96" />
         </div>
         <Skeleton className="h-10 w-full" />
-        <div className="channels-grid-4 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
           {Array.from({ length: 12 }).map((_, i) => (
             <div key={i} className="space-y-2">
               <Skeleton className="aspect-video w-full" />
@@ -181,7 +178,6 @@ const CategoryChannels = () => {
     );
   }
 
-  // Render error state
   if (error) {
     return (
       <Alert variant="destructive">
@@ -191,7 +187,6 @@ const CategoryChannels = () => {
     );
   }
 
-  // Render "Category not found" if data is missing
   if (!category) {
     return (
       <Alert>
@@ -201,13 +196,12 @@ const CategoryChannels = () => {
     );
   }
 
-  // --- Render normal state (channel list) ---
   return (
     <div className="space-y-6">
-      {/* Back Button */}
+      {/* Back Button at top left */}
       <div className="-mt-2">
-        <Button 
-          variant="ghost" 
+        <Button
+          variant="ghost"
           onClick={() => setLocation('/')}
           className="flex items-center gap-2 pl-0"
         >
@@ -265,7 +259,7 @@ const CategoryChannels = () => {
           </p>
         </div>
       ) : (
-        <div className="channels-grid-4">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
           {filteredChannels.map(channel => (
             <ChannelCard key={channel.id} channel={channel} />
           ))}
