@@ -19,22 +19,32 @@ const Home = () => {
 
   const fetchCategories = async () => {
     try {
+      console.log('Starting to fetch categories...');
       setLoading(true);
       setError(null);
       
+      console.log('Firebase config check:', {
+        hasDb: !!db,
+        projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID
+      });
+      
       const categoriesCol = collection(db, 'categories');
       const q = query(categoriesCol, orderBy('name'));
+      
+      console.log('Executing Firestore query...');
       const snapshot = await getDocs(q);
+      console.log('Query complete, docs:', snapshot.docs.length);
       
       const categoriesData = snapshot.docs.map(doc => ({
         id: doc.id,
         ...doc.data()
       })) as Category[];
       
+      console.log('Categories loaded:', categoriesData);
       setCategories(categoriesData);
     } catch (error) {
       console.error('Error fetching categories:', error);
-      setError('Failed to load categories. Please try again.');
+      setError(`Failed to load categories: ${error instanceof Error ? error.message : 'Unknown error'}`);
     } finally {
       setLoading(false);
     }

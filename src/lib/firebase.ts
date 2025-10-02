@@ -1,7 +1,7 @@
 // /src/lib/firebase.ts
 import { initializeApp } from "firebase/app";
 import { getAuth } from "firebase/auth";
-import { getFirestore } from "firebase/firestore";
+import { initializeFirestore, CACHE_SIZE_UNLIMITED } from "firebase/firestore";
 import { getAnalytics, isSupported } from "firebase/analytics";
 
 // Firebase config from environment variables
@@ -18,9 +18,22 @@ const firebaseConfig = {
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
 
-// Auth & Firestore
+// Auth
 export const auth = getAuth(app);
-export const db = getFirestore(app);
+
+// Initialize Firestore with long polling for better compatibility
+let db;
+try {
+  db = initializeFirestore(app, {
+    experimentalForceLongPolling: true,
+  });
+  console.log('Firestore initialized successfully with long polling');
+} catch (error) {
+  console.error('Firestore init error:', error);
+  throw error;
+}
+
+export { db };
 
 // Analytics (only in browser + if supported)
 export const analytics = (async () =>
