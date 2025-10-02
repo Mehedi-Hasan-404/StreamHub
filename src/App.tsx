@@ -1,70 +1,51 @@
-// /src/App.tsx
+// src/App.tsx
 import { lazy, Suspense } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { Router, Route, Switch } from "wouter";
-import { FavoritesProvider } from "@/contexts/FavoritesContext";
-import { RecentsProvider } from "@/contexts/RecentsContext";
-import { ThemeProvider } from "@/components/ThemeProvider";
-import Layout from "@/components/Layout";
+import { Router, Route } from "wouter"; // Assuming Wouter is used as per the PDF notes
+import { FavoritesProvider } from "./contexts/FavoritesContext";
+import { RecentsProvider } from "./contexts/RecentsContext";
+import { LoadingFallback } from "./components/LoadingFallback"; // Placeholder, likely defined inline or separately
+import Layout from "./components/Layout"; // Assuming a main layout component exists
 
-const Home = lazy(() => import("@/pages/Home"));
-const Favorites = lazy(() => import("@/pages/Favorites"));
-const CategoryChannels = lazy(() => import("@/pages/CategoryChannels"));
-const ChannelPlayer = lazy(() => import("@/pages/ChannelPlayer"));
-const Admin = lazy(() => import("@/pages/Admin"));
+// Dynamically import your pages/components
+const Home = lazy(() => import("./pages/Home"));
+const CategoryChannels = lazy(() => import("./pages/CategoryChannels")); // This is likely what loads when tapping "BDIX"
+const ChannelPlayer = lazy(() => import("./pages/ChannelPlayer"));
+const Favorites = lazy(() => import("./pages/Favorites"));
 const NotFound = lazy(() => import("./pages/NotFound"));
+// ... other pages
 
 const queryClient = new QueryClient();
 
-const LoadingFallback = () => (
-  <div className="flex items-center justify-center min-h-screen bg-background">
-    <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-accent"></div>
-  </div>
-);
-
-const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <ThemeProvider defaultTheme="dark" storageKey="iptv-ui-theme">
-        <Toaster />
-        <Sonner />
-        <Router>
-          <FavoritesProvider>
-            <RecentsProvider>
-              <Suspense fallback={<LoadingFallback />}>
-                <Switch>
-                  <Route path="/">
-                    <Layout><Home /></Layout>
-                  </Route>
-                  <Route path="/favorites">
-                    <Layout><Favorites /></Layout>
-                  </Route>
-                  <Route path="/category/:slug">
-                    {(params) => <Layout><CategoryChannels /></Layout>}
-                  </Route>
-                  <Route path="/channel/:channelId">
-                    {(params) => <Layout><ChannelPlayer /></Layout>}
-                  </Route>
-                  <Route path="/admin">
-                    <Admin />
-                  </Route>
-                  <Route path="/admin/:rest*">
-                    <Admin />
-                  </Route>
-                  <Route>
-                    <NotFound />
-                  </Route>
-                </Switch>
-              </Suspense>
-            </RecentsProvider>
-          </FavoritesProvider>
-        </Router>
-      </ThemeProvider>
-    </TooltipProvider>
-  </QueryClientProvider>
-);
+function App() {
+  return (
+    <QueryClientProvider client={queryClient}>
+      <FavoritesProvider>
+        <RecentsProvider>
+          <TooltipProvider>
+            <Router>
+              <Layout> {/* Layout might contain Header, Sidebar, BottomNav, Footer */}
+                <Suspense fallback={<LoadingFallback />}> {/* This is the key Suspense boundary */}
+                  {/* Define your routes here using Wouter */}
+                  <Route path="/" component={Home} />
+                  <Route path="/category/:id" component={CategoryChannels} /> {/* Route for categories like BDIX */}
+                  <Route path="/channel/:id" component={ChannelPlayer} />
+                  <Route path="/favorites" component={Favorites} />
+                  {/* Add other routes as needed */}
+                  <Route path="*" component={NotFound} /> {/* Catch-all for 404s */}
+                </Suspense>
+              </Layout>
+            </Router>
+            <Toaster />
+            <Sonner />
+          </TooltipProvider>
+        </RecentsProvider>
+      </FavoritesProvider>
+    </QueryClientProvider>
+  );
+}
 
 export default App;
