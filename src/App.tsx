@@ -48,6 +48,9 @@ const App = () => (
                   <Route path="/channel/:channelId">
                     {(params) => <Layout><ChannelPlayer /></Layout>}
                   </Route>
+                  <Route path="/admin">
+                    <Admin />
+                  </Route>
                   <Route path="/admin/:rest*">
                     <Admin />
                   </Route>
