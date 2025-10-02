@@ -240,7 +240,7 @@ const CategoryChannels = () => {
           placeholder="Search channels..."
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          className="w-full pl-10 pr-10 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-ring" {/* FIX: Standard input styles */}
+          className="w-full pl-10 pr-10 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-ring"
         />
         {searchQuery && (
           <button
