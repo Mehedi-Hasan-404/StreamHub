@@ -17,7 +17,6 @@ const CategoryChannels = () => {
   const [category, setCategory] = useState<Category | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [filteredChannels, setFilteredChannels] = useState<PublicChannel[]>([]);
-  // FIX: Add missing states
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -47,11 +46,9 @@ const CategoryChannels = () => {
       const line = lines[i];
 
       if (line.startsWith('#EXTINF:')) {
-        // Extract channel name (after the comma)
         const nameMatch = line.match(/,(.+)$/);
         const channelName = nameMatch ? nameMatch[1].trim() : 'Unknown Channel';
 
-        // Extract logo URL from tvg-logo attribute
         const logoMatch = line.match(/tvg-logo="([^"]+)"/);
         const logoUrl = logoMatch ? logoMatch[1] : '/placeholder.svg';
 
@@ -62,7 +59,6 @@ const CategoryChannels = () => {
           categoryName,
         };
       } else if (line && !line.startsWith('#') && currentChannel.name) {
-        // Create consistent ID format for M3U channels
         const cleanChannelName = currentChannel.name.replace(/[^a-zA-Z0-9]/g, '_').toLowerCase();
         const channel: PublicChannel = {
           id: `${categoryId}_${cleanChannelName}_${channels.length}`,
@@ -73,7 +69,7 @@ const CategoryChannels = () => {
           categoryName,
         };
         channels.push(channel);
-        currentChannel = {}; // Reset for next channel
+        currentChannel = {};
       }
     }
 
@@ -98,9 +94,8 @@ const CategoryChannels = () => {
     try {
       setLoading(true);
       setError(null);
-      console.log('Fetching for slug:', slug); // DEBUG
+      console.log('Fetching for slug:', slug);
 
-      // Find the category by slug
       const categoriesRef = collection(db, 'categories');
       const categoryQuery = query(categoriesRef, where('slug', '==', slug));
       const categorySnapshot = await getDocs(categoryQuery);
@@ -108,20 +103,19 @@ const CategoryChannels = () => {
       if (categorySnapshot.empty) {
         setError('Category not found');
         setLoading(false);
-        console.log('No category found'); // DEBUG
+        console.log('No category found');
         return;
       }
 
       const categoryDoc = categorySnapshot.docs[0];
       const categoryData = { id: categoryDoc.id, ...categoryDoc.data() } as Category;
       setCategory(categoryData);
-      console.log('Category loaded:', categoryData); // DEBUG
+      console.log('Category loaded:', categoryData);
 
       let allChannels: PublicChannel[] = [];
 
-      // If category has M3U URL, fetch and parse it to get channels
       if (categoryData.m3uUrl) {
-        console.log('Fetching M3U from:', categoryData.m3uUrl); // DEBUG
+        console.log('Fetching M3U from:', categoryData.m3uUrl);
         const m3uChannels = await fetchM3UPlaylist(
           categoryData.m3uUrl,
           categoryData.id,
@@ -134,10 +128,9 @@ const CategoryChannels = () => {
           console.log('No channels loaded from M3U playlist or fetch failed');
         }
       } else {
-        console.log('No m3uUrl in category - skipping M3U fetch'); // DEBUG
+        console.log('No m3uUrl in category - skipping M3U fetch');
       }
 
-      // Also fetch manually added channels from Firestore
       try {
         const channelsRef = collection(db, 'channels');
         const channelsQuery = query(channelsRef, where('categoryId', '==', categoryData.id));
@@ -149,7 +142,7 @@ const CategoryChannels = () => {
         })) as PublicChannel[];
 
         allChannels = [...allChannels, ...manualChannels];
-        console.log(`Loaded ${manualChannels.length} manual channels`); // DEBUG
+        console.log(`Loaded ${manualChannels.length} manual channels`);
       } catch (firestoreError) {
         console.error('Error fetching manual channels:', firestoreError);
       }
@@ -173,7 +166,6 @@ const CategoryChannels = () => {
           <Skeleton className="h-4 w-96" />
         </div>
         <Skeleton className="h-10 w-full" />
-        {/* FIX: Use standard Tailwind grid */}
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
           {Array.from({ length: 12 }).map((_, i) => (
             <div key={i} className="space-y-2">
@@ -211,7 +203,6 @@ const CategoryChannels = () => {
 
   return (
     <div className="space-y-6 p-4">
-      {/* Back Button at top left */}
       <div className="-mt-2">
         <Button
           variant="ghost"
@@ -228,12 +219,11 @@ const CategoryChannels = () => {
           <Tv size={24} />
           {category.name}
         </h1>
-        <p className="text-muted-foreground"> {/* FIX: Standard shadcn class */}
+        <p className="text-muted-foreground">
           {channels.length} channel{channels.length !== 1 ? 's' : ''} available
         </p>
       </div>
 
-      {/* Search Bar */}
       <div className="relative">
         <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-5 h-5" />
         <input
@@ -273,7 +263,7 @@ const CategoryChannels = () => {
           <Button onClick={() => setLocation('/admin')} className="mt-4">Go to Admin</Button>
         </div>
       ) : (
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4"> {/* FIX: Standard Tailwind */}
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
           {filteredChannels.map(channel => (
             <ChannelCard key={channel.id} channel={channel} />
           ))}
